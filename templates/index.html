@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book RAG Chatbot</title>
+
+    <style>
+
+        *{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container{
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 700px;
+            border: 1px solid #e8e8e8;
+        }
+
+        .header{
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.15);
+        }
+
+        h1{
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle{
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        #chat-box{
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            scroll-behavior: smooth;
+        }
+
+        #chat-box::-webkit-scrollbar{
+            width: 6px;
+        }
+
+        #chat-box::-webkit-scrollbar-track{
+            background: #f1f1f1;
+        }
+
+        #chat-box::-webkit-scrollbar-thumb{
+            background: #888;
+            border-radius: 3px;
+        }
+
+        #chat-box::-webkit-scrollbar-thumb:hover{
+            background: #555;
+        }
+
+        .message-wrapper{
+            display: flex;
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn{
+            from{
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to{
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-wrapper{
+            justify-content: flex-end;
+        }
+
+        .user{
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+
+        .bot-wrapper{
+            justify-content: flex-start;
+        }
+
+        .bot{
+            background: #F5F5F5;
+            color: #1a1a1a;
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 70%;
+            word-wrap: break-word;
+            border: 1px solid #E0E0E0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .loading{
+            background: #F5F5F5;
+            color: #666;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .loading span{
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #2196F3;
+            margin: 0 4px;
+            animation: bounce 1.4s infinite;
+        }
+
+        .loading span:nth-child(2){
+            animation-delay: 0.2s;
+        }
+
+        .loading span:nth-child(3){
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce{
+            0%, 60%, 100%{
+                opacity: 0.5;
+                transform: translateY(0);
+            }
+            30%{
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+        }
+
+        .input-area{
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        #message{
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 14px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: border-color 0.3s ease;
+        }
+
+        #message:focus{
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        button{
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        button:hover{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+        }
+
+        button:active{
+            transform: translateY(0);
+        }
+
+        button:disabled{
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>📚 Book RAG Chatbot</h1>
+        <div class="subtitle">Ask questions about the book content</div>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <div class="input-area">
+
+        <input
+            type="text"
+            id="message"
+            placeholder="Ask a question from the book..."
+            autocomplete="off"
+        >
+
+        <button id="send-btn" onclick="sendMessage()">
+            Send
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+async function sendMessage(){
+
+    let input = document.getElementById("message");
+    let sendBtn = document.getElementById("send-btn");
+
+    let question = input.value.trim();
+
+    if(question === ""){
+        return;
+    }
+
+    let chatBox = document.getElementById("chat-box");
+
+    // Add user message
+    let userDiv = document.createElement("div");
+    userDiv.className = "message-wrapper user-wrapper";
+    userDiv.innerHTML = `<div class="user">${escapeHtml(question)}</div>`;
+    chatBox.appendChild(userDiv);
+
+    input.value = "";
+    sendBtn.disabled = true;
+
+    // Add loading indicator
+    let loadingDiv = document.createElement("div");
+    loadingDiv.className = "message-wrapper bot-wrapper";
+    loadingDiv.innerHTML = `<div class="loading"><span></span><span></span><span></span></div>`;
+    chatBox.appendChild(loadingDiv);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try{
+        let response = await fetch("/chat",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                message:question
+            })
+        });
+
+        let data = await response.json();
+
+        // Remove loading indicator
+        loadingDiv.remove();
+
+        // Add bot response
+        let botDiv = document.createElement("div");
+        botDiv.className = "message-wrapper bot-wrapper";
+        botDiv.innerHTML = `<div class="bot">${escapeHtml(data.answer)}</div>`;
+        chatBox.appendChild(botDiv);
+
+    } catch(error){
+        loadingDiv.remove();
+        let errorDiv = document.createElement("div");
+        errorDiv.className = "message-wrapper bot-wrapper";
+        errorDiv.innerHTML = `<div class="bot" style="color: #d32f2f;">Error: Could not get response. Please try again.</div>`;
+        chatBox.appendChild(errorDiv);
+    }
+
+    sendBtn.disabled = false;
+    chatBox.scrollTop = chatBox.scrollHeight;
+    input.focus();
+}
+
+function escapeHtml(text){
+    let map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+document
+.getElementById("message")
+.addEventListener("keypress", function(event){
+
+    if(event.key === "Enter"){
+        sendMessage();
+    }
+
+});
+
+</script>
+
+</body>
+</html>
